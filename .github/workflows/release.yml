@@ -1,0 +1,62 @@
+name: Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout project
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Setup Node (Web Build)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 3. Install & Build Frontend
+      - name: Build Web Frontend
+        working-directory: ./web
+        run: |
+          npm ci
+          npm run build
+
+      # 4. Setup Go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      # 5. Build binaries for multiple OS/ARCH
+      - name: Build Go binaries
+        run: |
+          mkdir -p dist
+
+          # Linux amd64
+          GOOS=linux GOARCH=amd64 go build -o dist/nmtscope-linux-amd64 .
+
+          # macOS arm64
+          GOOS=darwin GOARCH=arm64 go build -o dist/nmtscope-darwin-arm64 .
+
+          # Windows amd64
+          GOOS=windows GOARCH=amd64 go build -o dist/nmtscope-windows-amd64.exe .
+
+      # 6. Create GitHub release & upload artifacts
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          files: |
+            dist/nmtscope-linux-amd64
+            dist/nmtscope-darwin-arm64
+            dist/nmtscope-windows-amd64.exe
