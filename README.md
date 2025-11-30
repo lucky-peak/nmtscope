@@ -1,3 +1,3 @@
-NMT 可视化
+NMT Visualization   
 
 ![screenshot](docs/screenshot.png)
